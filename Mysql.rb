@@ -1,6 +1,6 @@
 # 
 # DBD::Mysql
-# $Id: Mysql.rb,v 1.4 2001/06/07 10:42:13 michael Exp $
+# $Id: Mysql.rb,v 1.5 2001/06/07 13:53:00 michael Exp $
 # 
 # Version : 0.1
 # Author  : Michael Neumann (neumann@s-direktnet.de)
@@ -67,7 +67,8 @@ class Driver < DBI::BaseDriver
 end # class Driver
 
 class Database < DBI::BaseDatabase
- 
+  include SQL::BasicBind
+
   def disconnect
     @handle.close
   rescue MyError => err
@@ -89,9 +90,17 @@ class Database < DBI::BaseDatabase
     raise DBI::DatabaseError.new(err.message)
   end
 
-  # TODO: 
-  # def do
-  
+
+  def do(stmt, *bindvars)
+    @handle.query_with_result = false
+    sql = bind(self, stmt, bindvars)
+    @handle.query(sql)
+    @handle.affected_rows
+  rescue MyError => err
+    raise DBI::DatabaseError.new(err.message)
+  end
+ 
+
   def prepare(statement)
     Statement.new(@handle, statement)
   end
